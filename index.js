@@ -2,6 +2,7 @@ var Service;
 var Characteristic;
 var HomebridgeAPI;
 var http = require('http');
+var url = require('url');
 
 module.exports = function(homebridge) {
     Service = homebridge.hap.Service;
@@ -16,6 +17,11 @@ function HTTPMotionSensor(log, config) {
     this.log = log;
     this.name = config.name;
     this.port = config.port;
+    this.reportBatteryLevel = config.reportBatteryLevel;
+    this.lowBatteryLevel = config.lowBatteryLevel;
+    this.fullBatteryLevel = config.fullBatteryLevel;
+    this.currentBatteryLevel = null;
+    this.currentBatteryPercent = null;
     this.motionDetected = false;
     this.timeout = null;
 
@@ -23,11 +29,30 @@ function HTTPMotionSensor(log, config) {
 
     var that = this;
     this.server = http.createServer(function(request, response) {
-        that.httpHandler(that);
+        var vdd = null;
+        if(this.reportBatteryLevel){
+            var queryData = url.parse(request.url, true).query;
+            if(queryData.vdd){
+                vdd = parseInt(queryData.vdd);
+            }
+        }
+        that.httpHandler(that, vdd);
         response.end('Successfully requested: ' + request.url);
     });
 
+    // battery service
+    if(this.reportBatteryLevel) {
+        this.batteryService = new Service.BatteryService(this.name);
+        // BatteryService
+        this.batteryService.getCharacteristic(Characteristic.BatteryLevel)
+            .on('get', this.getBatteryLevel.bind(this));
+        this.batteryService.getCharacteristic(Characteristic.ChargingState)
+            .on('get', this.getChargingState.bind(this));
+        this.batteryService.getCharacteristic(Characteristic.StatusLowBattery)
+            .on('get', this.getStatusLowBattery.bind(this));
+        this.batteryMultiplier = 100.0 / (this.fullBatteryLevel - this.lowBatteryLevel);
 
+    }
 
     // info service
     this.informationService = new Service.AccessoryInformation();
@@ -38,7 +63,7 @@ function HTTPMotionSensor(log, config) {
         .setCharacteristic(Characteristic.SerialNumber, config.serial || "4BD53931-D4A9-4850-8E7D-8A51A842FA29");
 
 
-
+    
 
     this.service = new Service.MotionSensor(this.name);
 
@@ -50,14 +75,36 @@ function HTTPMotionSensor(log, config) {
     });
 }
 
+HTTPMotionSensor.prototype.getBatteryLevel = function(callback) {
+    this.platform.log(`Getting battery level: ${this.currentBatteryPercent}`);
+    callback(null, this.currentBatteryPercent);
+};
 
+HTTPMotionSensor.prototype.getChargingState = function(callback) {
+    callback(null, Characteristic.ChargingState.NOT_CHARGEABLE);
+};
+
+HTTPMotionSensor.prototype.getStatusLowBattery = function(callback) {
+    this.platform.log(`Getting battery status`);
+    callback(null, this.currentBatteryPercent < 20
+        ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
+        : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL
+    );
+};
 HTTPMotionSensor.prototype.getState = function(callback) {
     callback(null, this.motionDetected);
 };
 
-HTTPMotionSensor.prototype.httpHandler = function(that) {
+HTTPMotionSensor.prototype.httpHandler = function(that, vdd) {
     that.log("motion detected");
-
+    if(vdd) {
+        that.log("battery level: " + vdd);
+        that.currentBatteryLevel = vdd;
+        this.currentBatteryPercent = this.batteryMultiplier * (this.currentBatteryLevel - this.lowBatteryLevel)
+        this.batteryService.getCharacteristic(Characteristic.BatteryLevel)
+            .updateValue(this.currentBatteryPercent, null, "httpHandler");
+        this.
+    }
     for (var i = 0; i < that.repeater.length; i++) {
         // that.log("reflecting to " + that.repeater[i]);
         http.get(that.repeater[i], function(res) {
