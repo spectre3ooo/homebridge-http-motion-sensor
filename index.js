@@ -102,13 +102,14 @@ HTTPMotionSensor.prototype.getState = function(callback) {
 HTTPMotionSensor.prototype.httpHandler = function(that, vdd) {
     that.log("motion detected");
     if(vdd) {
-        that.log("battery level: " + vdd);
         that.currentBatteryLevel = vdd;
-        this.currentBatteryPercent = this.batteryMultiplier * (this.currentBatteryLevel - this.lowBatteryLevel)
-        this.batteryService.getCharacteristic(Characteristic.BatteryLevel)
-            .updateValue(this.currentBatteryPercent, null, "httpHandler");
-        this.batteryService.getCharacteristic(Characteristic.StatusLowBattery)
-            .updateValue(this.currentBatteryPercent < 20
+        that.currentBatteryPercent = this.batteryMultiplier * (this.currentBatteryLevel - this.lowBatteryLevel)
+        that.log("battery level: " + that.currentBatteryLevel);
+        that.log("battery percent: " + that.currentBatteryPercent);
+        that.batteryService.getCharacteristic(Characteristic.BatteryLevel)
+            .updateValue(that.currentBatteryPercent, null, "httpHandler");
+        that.batteryService.getCharacteristic(Characteristic.StatusLowBattery)
+            .updateValue(that.currentBatteryPercent < 20
                             ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
                             : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL, null, "httpHandler");
     }
