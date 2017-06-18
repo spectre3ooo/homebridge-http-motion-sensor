@@ -31,9 +31,12 @@ function HTTPMotionSensor(log, config) {
     this.server = http.createServer(function(request, response) {
         var vdd = null;
         if(this.reportBatteryLevel){
+            that.log(`url: ${request.url}`);
             var queryData = url.parse(request.url, true).query;
             if(queryData.vdd){
+                that.log(`query vdd: ${queryData.vdd}`);
                 vdd = parseInt(queryData.vdd);
+                that.log(`parsed vdd: ${queryData.vdd}`);
             }
         }
         that.httpHandler(that, vdd);
