@@ -76,7 +76,7 @@ function HTTPMotionSensor(log, config) {
 }
 
 HTTPMotionSensor.prototype.getBatteryLevel = function(callback) {
-    this.platform.log(`Getting battery level: ${this.currentBatteryPercent}`);
+    this.log(`Getting battery level: ${this.currentBatteryPercent}`);
     callback(null, this.currentBatteryPercent);
 };
 
@@ -85,7 +85,7 @@ HTTPMotionSensor.prototype.getChargingState = function(callback) {
 };
 
 HTTPMotionSensor.prototype.getStatusLowBattery = function(callback) {
-    this.platform.log(`Getting battery status`);
+    this.log(`Getting battery status`);
     callback(null, this.currentBatteryPercent < 20
         ? Characteristic.StatusLowBattery.BATTERY_LEVEL_LOW
         : Characteristic.StatusLowBattery.BATTERY_LEVEL_NORMAL
