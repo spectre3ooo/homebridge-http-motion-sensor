@@ -128,5 +128,9 @@ HTTPMotionSensor.prototype.httpHandler = function(that, vdd) {
 };
 
 HTTPMotionSensor.prototype.getServices = function() {
-    return [this.informationService, this.service];
+    if(this.reportBatteryLevel){
+        return [this.informationService, this.service, this.batteryService];
+    }else {
+        return [this.informationService, this.service];
+    }
 };
