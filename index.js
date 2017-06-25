@@ -103,7 +103,9 @@ HTTPMotionSensor.prototype.httpHandler = function(that, vdd) {
     that.log("motion detected");
     if(vdd) {
         that.currentBatteryLevel = vdd;
-        that.currentBatteryPercent = this.batteryMultiplier * (this.currentBatteryLevel - this.lowBatteryLevel)
+        if(that.currentBatteryLevel >= that.fullBatteryLevel) that.currentBatteryPercent = 100;
+        else if(that.currentBatteryLevel <= that.lowBatteryLevel) that.currentBatteryPercent = 0;
+        else that.currentBatteryPercent = this.batteryMultiplier * (this.currentBatteryLevel - this.lowBatteryLevel)
         that.log("battery level: " + that.currentBatteryLevel);
         that.log("battery percent: " + that.currentBatteryPercent);
         that.batteryService.getCharacteristic(Characteristic.BatteryLevel)
